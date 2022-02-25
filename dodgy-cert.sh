@@ -15,7 +15,6 @@ echo -e "Lets go! Running for ${BLUE}$host${NC} on port ${BLUE}$port${NC}"
 if [ $test == true ]; then
   echo "this is only a test"
   openssl s_client -showcerts -servername $host -connect $host:$port </dev/null
-  openssl s_client -showcerts -servername $host -connect $host:$port 2>/dev/null </dev/null |  sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'
   exit
 fi
 
@@ -33,30 +32,51 @@ then
   exit
 fi
 
-certfile=$host".pem"
-openssl s_client -showcerts -servername $host -connect $host:$port 2>/dev/null </dev/null |  sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > $certfile
+# Get all certs for site
+certificates=()
+openssl s_client -showcerts -verify 5 -connect $host:$port < /dev/null | awk '/BEGIN/,/END/{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
+for cert in *.pem; 
+do 
+  newname=$(openssl x509 -noout -subject -in $cert | sed -nE 's/.*CN ?= ?(.*)/\1/; s/[ ,.*]/_/g; s/__/_/g; s/_-_/-/; s/^_//g;p' | tr '[:upper:]' '[:lower:]').pem; 
+  mv $cert $newname;
+  certificates+=($newname);
+done
 
-if [ ! -f $certfile ]; then
-  echo -e "${RED}Failed to get cert${NC}"
+echo "${#certificates[@]}"
+
+if [ ${#certificates[@]} -le 0 ]; then
+  echo -e "${RED}Failed to get certs${NC}"
   exit
 fi
 
+
 if [[ "$ID" == "ubuntu" ]]; then
-  echo "Running for ubuntu"
-  # changing file to crt to work in ubuntu
-  sudo cp $certfile /usr/local/share/ca-certificates/$host.crt
+  echo -e "Running for ${BLUE}ubuntu${NC}"
+  for certfile in "${certificates[@]}"
+  do
+      # changing file to crt to work in ubuntu
+      sudo cp $certfile /usr/local/share/ca-certificates/$certfile.crt
+  done
   sudo update-ca-certificates
 elif [[ "$ID" == "fedora" ]]; then
-  echo "Running for fedora"
-  sudo cp $certfile /etc/pki/ca-trust/source/anchors/
+  echo -e "Running for ${BLUE}fedora${NC}"
+  for certfile in "${certificates[@]}"
+  do
+      sudo cp $certfile /etc/pki/ca-trust/source/anchors/
+  done
   sudo update-ca-trust
 else
   echo -e "${RED}Distro was neither ubuntu nor fedora and I am sorry${NC}"
 fi
 
-# Cleanup file
-if [ -f "$certfile" ] ; then
+# Cleanup files
+for certfile in "${certificates[@]}"
+do
+  echo $certfile "what"
+  if [ -f "$certfile" ] ; then
+    echo $certfile "remove"
     rm "$certfile"
-fi
+  fi
+done
 
 echo -e "${GREEN}rest asured it seems like it worked${NC}"
