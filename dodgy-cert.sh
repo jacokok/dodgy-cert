@@ -10,14 +10,10 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-echo -e "Lets go! Running for ${BLUE}$host${NC} on port ${BLUE}$port${NC}"
+# Supported Distros
+DISTROS=("ubuntu" "fedora" "alpine")
 
-if [ $test == true ]; then
-  echo "this is only a test"
-  openssl s_client -showcerts -servername $host -connect $host:$port </dev/null
-  exit
-fi
-
+# Get Current Distro
 if [ -f /etc/os-release ]
 then
   . /etc/os-release
@@ -29,6 +25,25 @@ fi
 if [[ "$host" == *"https"* ]]
 then
   echo -e "${RED}Do not include https only base domain${NC}"
+  exit
+fi
+
+echo -e "Lets go! Running for ${BLUE}$host${NC} on port ${BLUE}$port${NC} for dist ${BLUE}$ID{NC}"
+
+if [[ ! "${DISTROS[*]}" =~ "${ID}" ]]; then
+    echo "Not supported distro"
+    exit
+fi
+
+if ! openssl version
+then
+    echo "Please install openssl"
+    exit
+fi
+
+if [[ $test == true ]]; then
+  echo "this is only a test"
+  openssl s_client -showcerts -servername $host -connect $host:$port </dev/null
   exit
 fi
 
@@ -50,8 +65,8 @@ if [ ${#certificates[@]} -le 0 ]; then
 fi
 
 
-if [[ "$ID" == "ubuntu" ]]; then
-  echo -e "Running for ${BLUE}ubuntu${NC}"
+echo -e "Running for ${BLUE}${ID}${NC}"
+if [[ "$ID" == "ubuntu" ]] || [[ "$ID" == "alpine" ]]; then
   for certfile in "${certificates[@]}"
   do
       # changing file to crt to work in ubuntu
@@ -59,22 +74,19 @@ if [[ "$ID" == "ubuntu" ]]; then
   done
   sudo update-ca-certificates
 elif [[ "$ID" == "fedora" ]]; then
-  echo -e "Running for ${BLUE}fedora${NC}"
   for certfile in "${certificates[@]}"
   do
       sudo cp $certfile /etc/pki/ca-trust/source/anchors/
   done
   sudo update-ca-trust
 else
-  echo -e "${RED}Distro was neither ubuntu nor fedora and I am sorry${NC}"
+  echo -e "${RED}Distro not supported and I am sorry${NC}"
 fi
 
 # Cleanup files
 for certfile in "${certificates[@]}"
 do
-  echo $certfile "what"
   if [ -f "$certfile" ] ; then
-    echo $certfile "remove"
     rm "$certfile"
   fi
 done
