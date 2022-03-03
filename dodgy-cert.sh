@@ -28,7 +28,7 @@ then
   exit
 fi
 
-echo -e "Lets go! Running for ${BLUE}$host${NC} on port ${BLUE}$port${NC} for dist ${BLUE}$ID{NC}"
+echo -e "Lets go! Running for ${BLUE}$host${NC} on port ${BLUE}$port${NC} for dist ${BLUE}$ID${NC}"
 
 if [[ ! "${DISTROS[*]}" =~ "${ID}" ]]; then
     echo "Not supported distro"
