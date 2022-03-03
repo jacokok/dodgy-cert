@@ -66,19 +66,28 @@ fi
 
 
 echo -e "Running for ${BLUE}${ID}${NC}"
-if [[ "$ID" == "ubuntu" ]] || [[ "$ID" == "alpine" ]]; then
+if [[ "$ID" == "ubuntu" ]]
+then
   for certfile in "${certificates[@]}"
   do
       # changing file to crt to work in ubuntu
       sudo cp $certfile /usr/local/share/ca-certificates/$certfile.crt
   done
   sudo update-ca-certificates
-elif [[ "$ID" == "fedora" ]]; then
+elif [[ "$ID" == "fedora" ]]
+then
   for certfile in "${certificates[@]}"
   do
       sudo cp $certfile /etc/pki/ca-trust/source/anchors/
   done
   sudo update-ca-trust
+elif [[ "$ID" == "alpine" ]]
+then
+  for certfile in "${certificates[@]}"
+  do
+      cp $certfile /usr/local/share/ca-certificates/$certfile.crt
+  done
+  update-ca-certificates
 else
   echo -e "${RED}Distro not supported and I am sorry${NC}"
 fi
