@@ -11,7 +11,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Supported Distros
-DISTROS=("ubuntu" "fedora" "alpine")
+DISTROS=("ubuntu" "fedora" "alpine" "debian")
 
 # Get Current Distro
 if [ -f /etc/os-release ]
@@ -66,7 +66,7 @@ fi
 
 
 echo -e "Running for ${BLUE}${ID}${NC}"
-if [[ "$ID" == "ubuntu" ]]
+if [[ "$ID" == "ubuntu" ]] || [[ "$ID" == "debian" ]]
 then
   for certfile in "${certificates[@]}"
   do
