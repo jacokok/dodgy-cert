@@ -2,7 +2,7 @@
 
 host=${1:-google.com}
 port=${2:-443}
-test=${3:false}
+proxy=${3:-}
 
 # Colors for logging
 RED='\033[0;31m'
@@ -41,15 +41,9 @@ then
     exit
 fi
 
-if [[ $test == true ]]; then
-  echo "this is only a test"
-  openssl s_client -showcerts -servername $host -connect $host:$port </dev/null
-  exit
-fi
-
 # Get all certs for site
 certificates=()
-openssl s_client -showcerts -verify 5 -connect $host:$port < /dev/null | awk '/BEGIN/,/END/{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
+openssl s_client -showcerts -verify 5 $proxy -connect $host:$port < /dev/null | awk '/BEGIN/,/END/{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
 for cert in *.pem; 
 do 
   newname=$(openssl x509 -noout -subject -in $cert | sed -nE 's/.*CN ?= ?(.*)/\1/; s/[ ,.*]/_/g; s/__/_/g; s/_-_/-/; s/^_//g;p' | tr '[:upper:]' '[:lower:]').pem; 
