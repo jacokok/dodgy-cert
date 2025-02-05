@@ -41,6 +41,10 @@ then
     exit
 fi
 
+if [[ -n "$proxy" ]]; then
+  proxy="--proxy ${proxy}"
+fi
+
 # Get all certs for site
 certificates=()
 openssl s_client -showcerts -verify 5 $proxy -connect $host:$port < /dev/null | awk '/BEGIN/,/END/{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
